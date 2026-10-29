@@ -1,0 +1,66 @@
+{
+  "name": "longship",
+  "version": "0.2.8",
+  "description": "Valheim dedicated server command center",
+  "main": "src/main.cjs",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "dist:win": "electron-builder --win nsis portable",
+    "dist:linux": "electron-builder --linux tar.gz"
+  },
+  "devDependencies": {
+    "electron": "^40.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "games.valheimharbor.launcher",
+    "productName": "Longship",
+    "files": [
+      "src/**",
+      "renderer/**",
+      "bridge/**",
+      "README.md",
+      "docs/VALIDATION.md",
+      "docs/VALIDATION-0.2.md",
+      "docs/VALIDATION-0.2.1.md",
+      "resources/icons/**",
+      "docs/VALIDATION-0.2.8.md"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "signExecutable": false,
+      "icon": "resources/icons/longship.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Game",
+      "icon": "resources/icons"
+    },
+    "compression": "normal",
+    "mac": {
+      "icon": "resources/icons/longship.icns"
+    },
+    "nsis": {
+      "installerIcon": "resources/icons/longship.ico",
+      "uninstallerIcon": "resources/icons/longship.ico"
+    },
+    "portable": {
+      "splashImage": null
+    }
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "yauzl": "^3.4.0"
+  }
+}

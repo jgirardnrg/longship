@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><TargetFramework>netstandard2.0</TargetFramework><AssemblyName>ValheimHarborBridge</AssemblyName><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>
+<ItemGroup><Compile Include="HarborBridge.cs" />
+<Reference Include="BepInEx"><HintPath>$(ValheimDir)/BepInEx/core/BepInEx.dll</HintPath><Private>false</Private></Reference>
+<Reference Include="UnityEngine"><HintPath>$(ValheimDir)/valheim_server_Data/Managed/UnityEngine.dll</HintPath><Private>false</Private></Reference>
+<Reference Include="UnityEngine.CoreModule"><HintPath>$(ValheimDir)/valheim_server_Data/Managed/UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+<Reference Include="UnityEngine.JSONSerializeModule"><HintPath>$(ValheimDir)/valheim_server_Data/Managed/UnityEngine.JSONSerializeModule.dll</HintPath><Private>false</Private></Reference></ItemGroup>
+</Project>
