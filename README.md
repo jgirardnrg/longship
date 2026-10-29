@@ -14,6 +14,12 @@
 
 [Longship 0.2.8 alpha releases](https://github.com/jgirardnrg/longship/releases/tag/v0.2.8) include the Windows installer, Windows portable launcher, Linux x64 archive, source archive and optional companion plugin. This repository and its downloads are private; GitHub access is required. See [release notes](docs/RELEASE-NOTES-0.2.8.md) and the published SHA256SUMS file.
 
+## Support development
+
+Enjoying Longship? A donation helps support ongoing development, bug fixes, and new features. Every contribution is appreciated—thank you for helping the project grow.
+
+[![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=VEWKBSZYXKQF8)
+
 ## Install and run
 
 Use the Windows installer or portable executable, or extract the Linux x64 archive and run `./longship` as a regular desktop user. Builds are unsigned development releases. Linux needs Electron's desktop dependencies and Valheim's own server libraries. No Steam/Valheim binaries or BepInEx distribution are bundled.
