@@ -95,7 +95,7 @@ function pluginMap(files) {
   return mapped;
 }
 async function registry(install) {
-  try { const data = JSON.parse(await fs.readFile(path.join(install, '.longship-mods.json'), 'utf8')); if (data.version !== 1 || !Array.isArray(data.mods)) throw Error('Unsupported mod registry.'); return data; }
+  try { const data = JSON.parse((await fs.readFile(path.join(install, '.longship-mods.json'), 'utf8')).replace(/^\uFEFF/, '')); if (data.version !== 1 || !Array.isArray(data.mods)) throw Error('Unsupported mod registry.'); return data; }
   catch (e) { if (e.code === 'ENOENT') return { version: 1, mods: [] }; throw e; }
 }
 async function copyTree(source, dest, total = { bytes: 0, count: 0 }) {
