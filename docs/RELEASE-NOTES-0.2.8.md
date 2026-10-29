@@ -18,8 +18,8 @@ Valheim dedicated server command center for Windows and Linux, written from scra
 
 ## Downloads
 
-- `Longship Setup 0.2.8.exe`: Windows x64 installer.
-- `Longship 0.2.8.exe`: Windows x64 portable launcher.
+- `Longship.Setup.0.2.8.exe`: Windows x64 installer.
+- `Longship.0.2.8.exe`: Windows x64 portable launcher.
 - `longship-0.2.8-linux-x64.tar.gz`: Linux x64 application archive.
 - `Longship-0.2.8-source.zip`: source snapshot; also available in this repository.
 - `LongshipBridge-0.2.8.dll`: optional original BepInEx companion plugin. It retains its original internal plugin identity. Installation/enabling requires an appropriate stopped-server maintenance window.

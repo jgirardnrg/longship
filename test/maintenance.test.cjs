@@ -123,8 +123,9 @@ test('modded Linux environment supports space-containing paths; vanilla mode dis
 test('framework overlay rollback restores originals when a later destination is invalid', async () => {
   const f = await fixture(); try {
     const base = path.join(f.p.installDir, 'BepInEx/core'); await fs.mkdir(base, { recursive: true }); await fs.writeFile(path.join(base, 'BepInEx.dll'), 'original');
-    await fs.mkdir(path.join(f.p.installDir, 'winhttp.dll')); // Deliberate invalid destination.
-    const archive = path.join(f.root, 'framework.zip'); await fs.writeFile(archive, zip([{ name: 'BepInEx/core/BepInEx.dll', body: 'new' }, { name: 'BepInEx/core/BepInEx.Preloader.dll', body: 'preloader' }, { name: 'winhttp.dll', body: 'proxy' }]));
+    const loader = process.platform === 'linux' ? 'libdoorstop.so' : 'winhttp.dll';
+    await fs.mkdir(path.join(f.p.installDir, loader)); // Deliberate invalid destination.
+    const archive = path.join(f.root, 'framework.zip'); await fs.writeFile(archive, zip([{ name: 'BepInEx/core/BepInEx.dll', body: 'new' }, { name: 'BepInEx/core/BepInEx.Preloader.dll', body: 'preloader' }, { name: loader, body: 'proxy' }]));
     await assert.rejects(() => f.m.mods.install(f.p.id, archive, 'framework'), /regular file/);
     assert.equal(await fs.readFile(path.join(base, 'BepInEx.dll'), 'utf8'), 'original'); await assert.rejects(() => fs.stat(path.join(base, 'BepInEx.Preloader.dll')), { code: 'ENOENT' });
   } finally { await f.cleanup(); }
