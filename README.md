@@ -69,9 +69,9 @@ A `.longship-maintenance.lock` file protects against another manager instance. A
 
 ### Framework
 
-Download the correct trusted **BepInEx 5 x64** archive for the host OS. Stop every server using that installation. In **Mods**, choose **Install BepInEx ZIP**. Archive paths, sizes, duplicates and special-file/link entries are validated before applying an allowlisted loader/core overlay. Existing replaced files are backed up; a failed overlay attempts to restore them and reports any rollback needing attention.
+In **Mods**, click **Download BepInEx ↗** to open the [Valheim BepInEx pack](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/). Download its ZIP. See the [step-by-step installation guide](docs/INSTALL.md). Stop every server using that installation. In **Mods**, choose **Install BepInEx ZIP**. Archive paths, sizes, duplicates and special-file/link entries are validated before applying an allowlisted loader/core overlay. Existing replaced files are backed up; a failed overlay attempts to restore them and reports any rollback needing attention.
 
-Enable **Launch this server with BepInEx enabled**, then save. On Windows, the distribution supplies its winhttp proxy. On Linux, Longship sets legacy/current Doorstop variables and library paths, supporting both `libdoorstop.so` and `libdoorstop_x64.so`; an explicit library override is available. No shell wrapper is generated or executed. Vanilla launch sets loader-disable variables and rejects a loader configuration that explicitly ignores disabling.
+Installation automatically enables **Launch this server with BepInEx enabled**. Changes in Mods save automatically; no separate profile Save is needed. On Windows, the distribution supplies its winhttp proxy. On Linux, Longship sets legacy/current Doorstop variables and library paths, supporting both `libdoorstop.so` and `libdoorstop_x64.so`; an explicit library override is available. No shell wrapper is generated or executed. Vanilla launch sets loader-disable variables and rejects a loader configuration that explicitly ignores disabling.
 
 ### Plugins
 
@@ -87,7 +87,9 @@ Select a generated `.cfg` file. Edits require the server installation to be offl
 
 ## Original companion plugin
 
-`bridge/ValheimHarborBridge.dll` retains its original internal identity for compatibility. It provides authenticated loopback player snapshots, exact-name kicking and explicit saves. Install it only during an approved restart window into a compatible BepInEx 5 server. It is an ordinary optional plugin and can be imported through Longship, then enabled. Main-thread game API signatures are checked; unknown versions fail rather than guessing. Platform IDs come from the game, not display-name inference. No arbitrary remote console endpoint is provided.
+`bridge/ValheimHarborBridge.dll` retains its original internal identity for compatibility. It provides authenticated loopback player snapshots, exact-name kicking and explicit saves. Install it only during an approved restart window into a compatible BepInEx 5 server. In **Mods**, choose **Install Longship Bridge** (or **Update Longship Bridge**). Longship installs and enables the bundled version, preserving a backup of the previous managed copy. Stop the server first, then start it through Longship after installation. Main-thread game API signatures are checked; unknown versions fail rather than guessing. Platform IDs come from the game, not display-name inference. No arbitrary remote console endpoint is provided.
+
+Player-join sounds are enabled by default. Use the speaker button beside **Connected players** to mute or enable them per server. Longship must remain open with the bridge working; it checks about every 10 seconds. The first snapshot, server restarts and recovery after a connection failure establish a silent baseline, so players already online are not announced as new arrivals.
 
 The earlier two-server inspection is in `docs/WINDOWS-SERVER-INVENTORY.md`. Neither original server was patched, restarted or modded to develop these features. A live companion-plugin load/kick/save test remains a separate maintenance operation.
 

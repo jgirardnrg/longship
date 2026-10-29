@@ -43,8 +43,8 @@ class Maintenance {
     this.locks.add(lockKey); const job = { busy: true, phase, started: Date.now(), lines: [], error: null }; this.jobs.set(id, job); this.manager.emit('changed');
     let handle, file = path.join(p.installDir, '.longship-maintenance.lock');
     try { handle = await fs.open(file, 'wx', 0o600); await handle.writeFile(JSON.stringify({ pid: process.pid, started: job.started, phase })); const result = await fn(p, job); job.phase = 'complete'; return result; }
-    catch (e) { job.error = e.message; job.phase = 'failed'; throw e; }
-    finally { if (handle) { await handle.close(); await fs.unlink(file).catch(() => {}); } job.busy = false; this.locks.delete(lockKey); this.manager.emit('changed'); await atomic(path.join(this.manager.root, 'maintenance', id + '.json'), JSON.stringify(job, null, 2)).catch(() => {}); }
+    catch (e) { job.error = e.message; job.phase = 'failed';if(e.recoveryRequired)job.recoveryRequired=true; throw e; }
+    finally { if (handle) { await handle.close(); if(!job.recoveryRequired)await fs.unlink(file).catch(() => {}); } job.busy = false; this.locks.delete(lockKey); this.manager.emit('changed'); await atomic(path.join(this.manager.root, 'maintenance', id + '.json'), JSON.stringify(job, null, 2)).catch(() => {}); }
   }
   async waitStopped(id, timeout = 120000) {
     const started = Date.now();

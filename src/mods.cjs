@@ -167,6 +167,30 @@ class Mods {
       } finally { await fs.rm(stage, { recursive: true, force: true }); }
     });
   }
+  async installBridge(id, source, version) {
+    return this.maintenance.perform(id,'Installing Longship bridge',async p=>{
+      await this.maintenance.offline(id);
+      await fs.access(path.join(p.installDir,'BepInEx/core/BepInEx.Preloader.dll'));await fs.access(path.join(p.installDir,'BepInEx/core/BepInEx.dll'));
+      const data=await registry(p.installDir),prior=JSON.stringify(data,null,2),registryFile=path.join(p.installDir,'.longship-mods.json');
+      const isBridge=name=>/^(?:Longship[ _-]?Bridge|ValheimHarborBridge)(?:[ _-].*)?$/i.test(name);
+      const old=data.mods.filter(m=>m.kind==='longship-bridge'||isBridge(m.name));
+      if((await this.scanUnmanaged(p.installDir,data.mods)).some(file=>isBridge(path.basename(file).replace(/\.dll$/i,''))))throw Error('An unmanaged Longship Bridge is installed. Remove that copy before using the managed installer.');
+      const modId=crypto.randomUUID(),stage=`BepInEx/Longship-disabled/${modId}`,target=`BepInEx/plugins/Longship/${modId}`,tomb=`BepInEx/Longship-disabled/${modId}-previous`;
+      const backup=path.join(this.manager.root,'mod-backups',id,Date.now()+'-bridge-'+modId),moved=[];const oldLaunch=p.modsEnabled;let published=false,registryWritten=false;
+      await noLinks(p.installDir,stage);await noLinks(p.installDir,target);await noLinks(p.installDir,tomb);
+      await fs.mkdir(path.join(p.installDir,stage),{recursive:true});
+      try{
+        await fs.copyFile(source,path.join(p.installDir,stage,'ValheimHarborBridge.dll'));await fs.mkdir(backup,{recursive:true});await atomic(path.join(backup,'registry.json'),prior);
+        for(const mod of old){if(!/^[0-9a-f-]{36}$/i.test(mod.id))throw Error('Invalid old bridge entry.');const from=`${mod.enabled?'BepInEx/plugins/Longship':'BepInEx/Longship-disabled'}/${mod.id}`;await noLinks(p.installDir,from);await copyTree(path.join(p.installDir,from),path.join(backup,mod.id));}
+        for(const mod of old){const from=`${mod.enabled?'BepInEx/plugins/Longship':'BepInEx/Longship-disabled'}/${mod.id}`,to=tomb+'/'+mod.id;await fs.mkdir(path.dirname(path.join(p.installDir,to)),{recursive:true});await fs.rename(path.join(p.installDir,from),path.join(p.installDir,to));moved.push({from,to});}
+        await fs.mkdir(path.dirname(path.join(p.installDir,target)),{recursive:true});await fs.rename(path.join(p.installDir,stage),path.join(p.installDir,target));published=true;
+        data.mods=data.mods.filter(m=>!old.includes(m));data.mods.push({id:modId,name:'Longship Bridge',kind:'longship-bridge',version,enabled:true,dependencies:[],importedAt:new Date().toISOString()});
+        await atomic(registryFile,JSON.stringify(data,null,2));registryWritten=true;p.modsEnabled=true;await this.manager.persist();
+      }catch(error){p.modsEnabled=oldLaunch;const failures=[];try{if(registryWritten)await atomic(registryFile,prior);}catch(e){failures.push(e.message);}try{if(published)await fs.rm(path.join(p.installDir,target),{recursive:true,force:true});}catch(e){failures.push(e.message);}for(const move of moved.reverse())try{await fs.mkdir(path.dirname(path.join(p.installDir,move.from)),{recursive:true});await fs.rename(path.join(p.installDir,move.to),path.join(p.installDir,move.from));}catch(e){failures.push(e.message);}if(failures.length){const recovery=Error('Bridge update rollback needs attention. Backup: '+backup+'. '+failures.join('; '));recovery.recoveryRequired=true;throw recovery;}throw error;
+      }finally{await fs.rm(path.join(p.installDir,stage),{recursive:true,force:true}).catch(()=>{});}
+      await fs.rm(path.join(p.installDir,tomb),{recursive:true,force:true}).catch(()=>{});return {version,backup,enabled:true};
+    });
+  }
   async framework(id, p, files) {
     const mapped = frameworkMap(files, this.manager.platform), backup = path.join(this.manager.root, 'mod-backups', id, Date.now() + '-framework');
     const applied = [];

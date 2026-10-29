@@ -3,7 +3,7 @@ const crypto = require('node:crypto');
 const MODIFIERS = { combat:['veryeasy','easy','hard','veryhard'], deathpenalty:['casual','veryeasy','easy','hard','hardcore'], resources:['muchless','less','more','muchmore','most'], raids:['none','muchless','less','more','muchmore'], portals:['casual','hard','veryhard'] };
 const PRESETS=['Normal','Casual','Easy','Hard','Hardcore','Immersive','Hammer'];
 const KEYS=['nobuildcost','playerevents','passivemobs','nomap'];
-function profile(index=0) { return {id:crypto.randomUUID(),label:`Server ${index+1}`,name:'My Valheim server',installDir:'',saveDir:'',world:'Dedicated',worldPath:'',worldFormat:'',password:'',port:2456+index*10,public:true,crossplay:false,instanceId:crypto.randomBytes(4).toString('hex'),saveInterval:1800,backups:4,backupShort:7200,backupLong:43200,preset:'',modifiers:{},keys:[],restartEnabled:false,restartTime:'04:00',restartWarningSeconds:60,bridgePort:9800+index,bridgeToken:crypto.randomBytes(24).toString('hex'),extraArgs:[],steamcmdPath:'',updateCheckEnabled:false,updateCheckHours:6,modsEnabled:false,doorstopLibrary:''}; }
+function profile(index=0) { return {id:crypto.randomUUID(),label:`Server ${index+1}`,name:'My Valheim server',installDir:'',saveDir:'',world:'Dedicated',worldPath:'',worldFormat:'',password:'',port:2456+index*10,public:true,crossplay:false,instanceId:crypto.randomBytes(4).toString('hex'),saveInterval:1800,backups:4,backupShort:7200,backupLong:43200,preset:'',modifiers:{},keys:[],restartEnabled:false,restartTime:'04:00',restartWarningSeconds:60,bridgePort:9800+index,bridgeToken:crypto.randomBytes(24).toString('hex'),extraArgs:[],steamcmdPath:'',updateCheckEnabled:false,updateCheckHours:6,modsEnabled:false,doorstopLibrary:'',playerJoinSound:true}; }
 function normalizeInstanceId(value){return /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value||'')?crypto.createHash('sha256').update(value).digest('hex').slice(0,8):value;}
 function integer(v,min,max,label){if(!Number.isInteger(Number(v))||Number(v)<min||Number(v)>max)throw Error(`${label} must be ${min}–${max}.`);}
 function validate(p) {
@@ -17,6 +17,7 @@ function validate(p) {
  if(p.worldFormat&&!['legacy','chunked'].includes(p.worldFormat))throw Error('Unsupported world format.');
  if(!path.isAbsolute(p.installDir)||!path.isAbsolute(p.saveDir))throw Error('Choose absolute installation and save directories.');
  integer(p.port,1024,65534,'Game port');integer(p.saveInterval,60,86400,'Save interval');integer(p.backups,1,100,'Backup count');integer(p.backupShort,60,31536000,'Short backup interval');integer(p.backupLong,60,31536000,'Long backup interval');integer(p.bridgePort,1024,65535,'Bridge port');integer(p.restartWarningSeconds,0,3600,'Restart warning');
+ if(p.playerJoinSound!==undefined&&typeof p.playerJoinSound!=='boolean')throw Error('Player join sound must be a toggle.');
  if(p.modsEnabled!==undefined&&typeof p.modsEnabled!=='boolean')throw Error('Modded-launch setting must be a toggle.');
  if(p.updateCheckEnabled!==undefined&&typeof p.updateCheckEnabled!=='boolean')throw Error('Update checks setting must be a toggle.');
  if(p.steamcmdPath&&!path.isAbsolute(p.steamcmdPath))throw Error('Choose an absolute SteamCMD executable path.');

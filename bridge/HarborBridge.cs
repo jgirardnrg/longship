@@ -13,7 +13,7 @@ using BepInEx;
 using UnityEngine;
 
 namespace ValheimHarbor {
- [BepInPlugin("games.valheimharbor.bridge", "Longship Bridge", "0.2.0")]
+ [BepInPlugin("games.valheimharbor.bridge", "Longship Bridge", "0.2.9")]
  public sealed class HarborBridge : BaseUnityPlugin {
   [Serializable] public class Player { public string name; public string platformId; }
   [Serializable] public class Reply { public bool ok=true; public string error; public List<Player> players; }
@@ -50,8 +50,9 @@ namespace ValheimHarbor {
    else if(p.action=="kick"){var req=JsonUtility.FromJson<Kick>(p.body);if(req==null||string.IsNullOrWhiteSpace(req.name)||req.name.Length>128)throw new InvalidOperationException("Player name required.");var list=Method(n,"GetPlayerList").Invoke(n,null) as IEnumerable;int matches=0;foreach(var player in list)if(Convert.ToString(Read(player,"m_name"))==req.name)matches++;if(matches!=1)throw new InvalidOperationException("Player name is absent or ambiguous. Refresh the player list.");Method(n,"Kick",typeof(string)).Invoke(n,new object[]{req.name});}
    else if(p.action=="save")Save(n);
    else if(p.action=="stop"){Save(n);quitting=true;}
-   Send(p.context,200,JsonUtility.ToJson(reply));if(quitting){Application.Quit();return;}
-  }catch(Exception e){var inner=e.InnerException??e;Send(p.context,409,JsonUtility.ToJson(new Reply{ok=false,error=inner.Message}));}}}
+   Send(p.context,200,ReplyJson(reply));if(quitting){Application.Quit();return;}
+  }catch(Exception e){var inner=e.InnerException??e;Send(p.context,409,ReplyJson(new Reply{ok=false,error=inner.Message}));}}}
+  static string ReplyJson(Reply reply){return BridgeJson.Reply(reply.ok,reply.error,reply.players==null?null:reply.players.Select(player=>new KeyValuePair<string,string>(player.name,player.platformId)));}
   static void Send(TcpClient c,int status,string json){try{var body=Encoding.UTF8.GetBytes(json);var header=Encoding.ASCII.GetBytes("HTTP/1.1 "+status+" Result\r\nContent-Type: application/json\r\nContent-Length: "+body.Length+"\r\nConnection: close\r\n\r\n");using(c){var stream=c.GetStream();stream.Write(header,0,header.Length);stream.Write(body,0,body.Length);}}catch{try{c.Close();}catch{}}}
   void OnDestroy(){try{if(listener!=null)listener.Stop();}catch{}Pending p;while(queue.TryDequeue(out p))Send(p.context,503,"{\"error\":\"Bridge stopped\"}");}
  }
