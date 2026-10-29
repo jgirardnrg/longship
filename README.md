@@ -12,7 +12,7 @@
 
 ## Downloads
 
-[Longship 0.2.8 alpha releases](https://github.com/jgirardnrg/longship/releases/tag/v0.2.8) include the Windows installer, Windows portable launcher, Linux x64 archive, source archive and optional companion plugin. This repository and its downloads are private; GitHub access is required. See [release notes](docs/RELEASE-NOTES-0.2.8.md) and the published SHA256SUMS file.
+[Longship 0.2.8 alpha releases](https://github.com/jgirardnrg/longship/releases/tag/v0.2.8) include the Windows installer, Windows portable launcher, Linux x64 archive, source archive and optional companion plugin. The repository and release downloads are public; no GitHub account is required. See [release notes](docs/RELEASE-NOTES-0.2.8.md) and the published SHA256SUMS file.
 
 ## Support development
 
