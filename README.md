@@ -121,3 +121,9 @@ npm run dist:linux
 See `docs/VALIDATION-0.2.1.md` for world discovery validation and `docs/VALIDATION-0.2.md` for maintenance features and `docs/VALIDATION.md` for original baseline evidence. Windows packages are installer + portable; Linux distribution is a tar.gz archive. Source is included separately. Compilation/unit fixtures do not establish real Steam patch success or third-party mod compatibility. Linux native desktop acceptance and real-server maintenance remain explicit limits.
 
 Sources: [Valve SteamCMD documentation](https://developer.valvesoftware.com/wiki/SteamCMD), [Iron Gate dedicated-server guide](https://www.valheimgame.com/support/a-guide-to-dedicated-servers/), [BepInEx installation](https://docs.bepinex.dev/articles/user_guide/installation/index.html). Feature reference only: [ValheimServerGUI](https://github.com/runeberry/ValheimServerGUI).
+
+## Compact window and system tray
+
+Longship opens in a smaller 1180 × 780 window, with denser cards, fields and navigation. It can resize down to 900 × 600. Use **Minimize to tray**, or the normal minimize control, to hide the window while servers, schedules and join sounds continue running. Click the Longship tray icon or choose **Open Longship** to restore it. The tray menu also shows server status. **Quit Longship** keeps the existing protection against exiting during active server work. Closing the window still exits when idle.
+
+If the tray cannot be created, minimize uses the normal taskbar instead. Linux tray visibility depends on the desktop's system-tray/AppIndicator support.
