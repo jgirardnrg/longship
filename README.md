@@ -1,6 +1,6 @@
 # Longship
 
-**Valheim dedicated server command center** - an independent Windows/Linux desktop launcher, written from scratch. Longship 0.2.8 keeps the original gold rune logo and upgrades the application formerly named Valheim Harbor. No source code from the feature-reference application was copied.
+**Valheim dedicated server command center** - an independent Windows/Linux desktop launcher, written from scratch. Longship 0.3.0 keeps the original gold rune logo and upgrades the application formerly named Valheim Harbor. No source code from the feature-reference application was copied.
 
 ## What is included
 
@@ -10,9 +10,12 @@
 - **Server updates:** installed/public Steam build comparison through SteamCMD, optional periodic checks, and an explicitly confirmed stop/back-up/patch/verify workflow. No unattended patching.
 - **Mods:** local BepInEx 5 ZIP installation, plugin ZIP/DLL import, enable/disable/removal, unmanaged-plugin inventory and backed-up `.cfg` editing with external-change detection.
 
+- **Automatic setup:** detect existing server/SteamCMD folders, install SteamCMD, and download a new Valheim dedicated server without starting it.
+- **Connection history:** persistent connect/disconnect observations with names and platform IDs, viewing and export. Requires the server bridge; snapshot monitoring limits are explained in the UI.
+
 ## Downloads
 
-[Longship 0.2.8 alpha releases](https://github.com/jgirardnrg/longship/releases/tag/v0.2.8) include the Windows installer, Windows portable launcher, Linux x64 archive, source archive and optional companion plugin. The repository and release downloads are public; no GitHub account is required. See [release notes](docs/RELEASE-NOTES-0.2.8.md) and the published SHA256SUMS file.
+[Longship releases](https://github.com/jgirardnrg/longship/releases) provide Windows installer/portable builds and Linux packages. The repository and downloads are public. See [0.3.0 release notes](docs/RELEASE-NOTES-0.3.0.md) and [installation instructions](docs/INSTALL.md).
 
 ## Support development
 

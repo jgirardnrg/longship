@@ -11,3 +11,4 @@
 .metrics{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}#joinCode{letter-spacing:2px}
 
 .card,.metric,.heading>div{min-width:0}.toolbar{flex-wrap:wrap}.metrics #publicAddress{font-size:14px}button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}@media(max-width:1100px){.subtitle{display:none}footer span:nth-child(2){display:none}}
+.setup-log{height:100px;min-height:3em;max-height:140px;margin-top:8px}

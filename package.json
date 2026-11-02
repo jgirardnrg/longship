@@ -1,6 +1,6 @@
 {
   "name": "longship",
-  "version": "0.2.10",
+  "version": "0.3.0",
   "description": "Valheim dedicated server command center",
   "main": "src/main.cjs",
   "private": true,
@@ -11,7 +11,7 @@
     "dist:linux": "electron-builder --linux tar.gz"
   },
   "devDependencies": {
-    "electron": "^40.0.0",
+    "electron": "45.2.1",
     "electron-builder": "^26.0.0"
   },
   "build": {
@@ -28,7 +28,9 @@
       "resources/icons/**",
       "docs/VALIDATION-0.2.8.md",
       "resources/audio/**",
-      "docs/INSTALL.md"
+      "docs/INSTALL.md",
+      "docs/RELEASE-NOTES-0.3.0.md",
+      "docs/VALIDATION-0.3.0.md"
     ],
     "directories": {
       "output": "release"
