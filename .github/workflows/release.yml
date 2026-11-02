@@ -1,0 +1,74 @@
+name: Longship release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            command: npx electron-builder --win nsis portable --x64
+            executable: release/win-unpacked/Longship.exe
+          - os: ubuntu-22.04
+            platform: linux
+            command: npx electron-builder --linux AppImage deb tar.gz --x64
+            executable: release/linux-unpacked/longship
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: node node_modules/electron/install.js
+      - run: npm test
+      - run: ${{ matrix.command }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: npm install --no-save --package-lock=false playwright@1.64.1
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a node test/packaged-smoke.cjs
+        env:
+          LONGSHIP_APP: ${{ matrix.executable }}
+      - if: runner.os == 'Windows'
+        run: node test/packaged-smoke.cjs
+        env:
+          LONGSHIP_APP: ${{ matrix.executable }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: longship-${{ matrix.platform }}-x64
+          path: |
+            release/*.exe
+            release/*.AppImage
+            release/*.deb
+            release/*.tar.gz
+            release/packaged-smoke.png
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+      - name: Publish prerelease and checksums
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd packages
+          rm -f packaged-smoke.png
+          sha256sum * > SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --prerelease --title "Longship $GITHUB_REF_NAME alpha" --notes-file ../docs/RELEASE-NOTES-0.3.0.md ./*

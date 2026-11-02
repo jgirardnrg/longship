@@ -1,6 +1,7 @@
 # Longship 0.3.0 validation
 
 - Original checkout regression suite: 120 tests; 119 pass, one Windows-only JSON compiler test skipped on Intel macOS.
+- Clean launcher-only checkout (without Atlas): 72 tests; 71 pass, one Windows-only test skipped on Intel macOS.
 - Windows-specific installer/discovery/history/sound regression run: 11/11 pass on Node 24 in an isolated test workspace.
 - GUI fixture using Electron 45.2.1: auto-detection populates a new profile, installation results remain selected without extra saves, history shows name/ID, no renderer errors. Screenshots in ignored `build/longship-setup.png` and `build/longship-player-history.png`.
 - Actual SteamCMD bootstrapping and a fresh public Valheim Dedicated Server installation passed on Windows x64 and Linux x64. Both reported public build 26266951, a server executable and a valid manifest. No game server was launched.
