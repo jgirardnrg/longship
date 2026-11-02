@@ -13,11 +13,11 @@ jobs:
         include:
           - os: windows-latest
             platform: windows
-            command: npx electron-builder --win nsis portable --x64
+            command: npx electron-builder --win nsis portable --x64 --publish never
             executable: release/win-unpacked/Longship.exe
           - os: ubuntu-22.04
             platform: linux
-            command: npx electron-builder --linux AppImage deb tar.gz --x64
+            command: npx electron-builder --linux AppImage deb tar.gz --x64 --publish never
             executable: release/linux-unpacked/longship
     runs-on: ${{ matrix.os }}
     steps:
