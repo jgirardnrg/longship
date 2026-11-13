@@ -12,3 +12,31 @@
 
 .card,.metric,.heading>div{min-width:0}.toolbar{flex-wrap:wrap}.metrics #publicAddress{font-size:14px}button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}@media(max-width:1100px){.subtitle{display:none}footer span:nth-child(2){display:none}}
 .setup-log{height:100px;min-height:3em;max-height:140px;margin-top:8px}
+
+#modConfirm {
+  width: min(460px, calc(100vw - 32px));
+  padding: 22px;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 16px 48px #0008;
+}
+#modConfirm::backdrop { background: #080e16b8; }
+#modConfirm h2 { font-size: 17px; margin: 0 0 10px; }
+#modConfirm .mod-confirm-file { color: var(--gold); overflow-wrap: anywhere; }
+#modConfirm .actions { justify-content: flex-end; margin-top: 18px; }
+
+header { -webkit-app-region: drag; gap: 14px; }
+header button { -webkit-app-region: no-drag; }
+.window-controls { display: flex; align-self: stretch; gap: 2px; }
+.window-controls button {
+  width: 34px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  font-size: 19px;
+  line-height: 1;
+}
+.window-controls button:hover { background: #2a3c49; }
+.window-controls button:last-child:hover { background: #943b44; }

@@ -5,7 +5,12 @@ if(!customUserData)app.setPath('userData',userDataRoot(app.getPath('appData')));
 app.setName('Longship');
 if(process.platform==='win32')app.setAppUserModelId('games.valheimharbor.launcher');
 const primaryInstance=app.requestSingleInstanceLock();if(!primaryInstance)app.quit();else app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.show();win.focus();}});
-app.whenReady().then(async()=>{if(!primaryInstance)return;if(process.platform==='darwin')app.dock?.setIcon(path.join(__dirname,'../resources/icons/longship.png'));if(!customUserData)await migrateLegacyData(app.getPath('appData'),app.getPath('userData'));manager=new Manager(path.join(app.getPath('userData'),'data'));await manager.load();setup=new (require('./setup.cjs').Setup)(manager.root,{steam:manager.updates.steam});setup.changed=()=>{if(win&&!win.isDestroyed())win.webContents.send('setupChanged',setup.job);};win=new BrowserWindow({width:1180,height:780,minWidth:900,minHeight:600,backgroundColor:'#111b25',icon:path.join(__dirname,'../resources/icons/longship.png'),webPreferences:{autoplayPolicy:'no-user-gesture-required',preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.setMenuBarVisibility(false);trayControls=require('./tray.cjs').createTray({Tray,Menu,nativeImage,win,app,manager});win.loadFile(path.join(__dirname,'../renderer/index.html'));let scheduled=false;manager.on('changed',()=>{if(!scheduled){scheduled=true;setTimeout(()=>{scheduled=false;if(!win.isDestroyed())win.webContents.send('changed');},200);}});manager.on('playerJoined',event=>{if(!win.isDestroyed())win.webContents.send('playerJoined',event);});manager.on('warning',message=>{if(!win.isDestroyed())win.webContents.send('warning',message);});win.on('close',e=>{if(setup?.job.busy||manager.profiles.some(p=>manager.active(p.id))||manager.pendingStarts.size||[...manager.maintenance.jobs.values()].some(j=>j.busy)||manager.updates.checking.size){e.preventDefault();dialog.showMessageBox(win,{type:'warning',message:'Server work is still in progress',detail:'Stop managed servers and wait for update checks or maintenance before closing Longship. It will not terminate running worlds on exit.',buttons:['Keep launcher open']});}});}).catch(error=>{dialog.showErrorBox('Longship configuration could not be loaded',error.message+'\nYour existing configuration has been preserved.');app.quit();});
+app.whenReady().then(async()=>{if(!primaryInstance)return;if(process.platform==='darwin')app.dock?.setIcon(path.join(__dirname,'../resources/icons/longship.png'));if(!customUserData)await migrateLegacyData(app.getPath('appData'),app.getPath('userData'));manager=new Manager(path.join(app.getPath('userData'),'data'));await manager.load();setup=new (require('./setup.cjs').Setup)(manager.root,{steam:manager.updates.steam});setup.changed=()=>{if(win&&!win.isDestroyed())win.webContents.send('setupChanged',setup.job);};win=new BrowserWindow({frame:false,width:1180,height:780,minWidth:900,minHeight:600,backgroundColor:'#111b25',icon:path.join(__dirname,'../resources/icons/longship.png'),webPreferences:{autoplayPolicy:'no-user-gesture-required',preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.setMenuBarVisibility(false);
+  const sendWindowState = () => win.webContents.send('windowMaximized', win.isMaximized());
+  win.on('maximize', sendWindowState);
+  win.on('unmaximize', sendWindowState);
+  win.webContents.on('did-finish-load', sendWindowState);
+  trayControls=require('./tray.cjs').createTray({Tray,Menu,nativeImage,win,app,manager});win.loadFile(path.join(__dirname,'../renderer/index.html'));let scheduled=false;manager.on('changed',()=>{if(!scheduled){scheduled=true;setTimeout(()=>{scheduled=false;if(!win.isDestroyed())win.webContents.send('changed');},200);}});manager.on('playerJoined',event=>{if(!win.isDestroyed())win.webContents.send('playerJoined',event);});manager.on('warning',message=>{if(!win.isDestroyed())win.webContents.send('warning',message);});win.on('close',e=>{if(setup?.job.busy||manager.profiles.some(p=>manager.active(p.id))||manager.pendingStarts.size||[...manager.maintenance.jobs.values()].some(j=>j.busy)||manager.updates.checking.size){e.preventDefault();dialog.showMessageBox(win,{type:'warning',message:'Server work is still in progress',detail:'Stop managed servers and wait for update checks or maintenance before closing Longship. It will not terminate running worlds on exit.',buttons:['Keep launcher open']});}});}).catch(error=>{dialog.showErrorBox('Longship configuration could not be loaded',error.message+'\nYour existing configuration has been preserved.');app.quit();});
 function handle(name,fn){ipcMain.handle(name,async(_e,...a)=>{try{return {ok:true,data:await fn(...a)};}catch(e){return {ok:false,error:e.message};}});}
 handle('listBackups',id=>manager.listBackups(id));
 handle('restoreBackup',async(id,backupId)=>{const info=await manager.restoreInfo(id,backupId);const answer=await dialog.showMessageBox(win,{type:'warning',message:`Restore ${info.world}?`,detail:`Restore the ${info.origin} backup from ${info.created?new Date(info.created).toLocaleString():'an unknown date'}. The server must be fully stopped. The current world will be backed up first. This replaces the current world and leaves the server stopped.`,buttons:['Cancel','Restore backup'],defaultId:0,cancelId:0});if(answer.response!==1)return{cancelled:true};return manager.restore(id,backupId);});
@@ -20,7 +25,28 @@ handle('mods',id=>manager.mods.list(id));
 handle('openBepInEx',()=>shell.openExternal('https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/'));
 handle('setJoinSound',(id,enabled)=>manager.setJoinSound(id,enabled));
 handle('installBridge',id=>manager.mods.installBridge(id,path.join(__dirname,'../bridge/ValheimHarborBridge.dll'),app.getVersion()));
-handle('installMod',async(id,kind)=>{if(!['plugin','framework'].includes(kind))throw Error('Unknown package type.');const chosen=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:kind==='framework'?'BepInEx ZIP':'Plugin package',extensions:kind==='framework'?['zip']:['zip','dll']}]});if(chosen.canceled)return {cancelled:true};const result=await dialog.showMessageBox(win,{type:'warning',message:kind==='framework'?'Install this BepInEx framework archive?':'Import this plugin package?',detail:'Only install packages you trust: mods execute code in your server process. The server must be stopped. Plugin imports start disabled; review dependencies before enabling. Framework files may replace existing loader files; backups are retained.',buttons:['Cancel','Install package'],defaultId:0,cancelId:0});if(result.response!==1)return {cancelled:true};return manager.mods.install(id,chosen.filePaths[0],kind);});
+let pendingModPackage;
+handle('chooseModPackage', async (id, kind) => {
+  if (!['plugin', 'framework'].includes(kind)) throw Error('Unknown package type.');
+  const framework = kind === 'framework';
+  pendingModPackage = undefined;
+  const chosen = await dialog.showOpenDialog(win, {
+    properties: ['openFile'],
+    filters: [{name: framework ? 'BepInEx ZIP' : 'Plugin package', extensions: framework ? ['zip'] : ['zip', 'dll']}]
+  });
+  if (chosen.canceled) return null;
+  const file = chosen.filePaths[0];
+  const token = require('node:crypto').randomUUID();
+  pendingModPackage = {token, id, kind, file};
+  return {token, filename: path.basename(file)};
+});
+handle('installMod', async (token, confirmed) => {
+  const selection = pendingModPackage;
+  if (!selection || selection.token !== token) throw Error('Select the package again before installing.');
+  pendingModPackage = undefined;
+  if (confirmed !== true) return;
+  return manager.mods.install(selection.id, selection.file, selection.kind);
+});
 handle('toggleMod',(id,modId,enabled)=>manager.mods.toggle(id,modId,enabled===true));
 handle('removeMod',async(id,modId)=>{const result=await dialog.showMessageBox(win,{type:'question',message:'Remove this managed plugin?',detail:'A copy is archived in Longship app data. Generated configuration files are preserved.',buttons:['Cancel','Remove plugin'],defaultId:0,cancelId:0});if(result.response!==1)return {cancelled:true};return manager.mods.remove(id,modId);});
 handle('readModConfig',(id,file)=>manager.mods.readConfig(id,file));
@@ -40,3 +66,10 @@ handle('installServer',async(id,destination,steamcmdPath)=>{
 });
 handle('playerHistory',id=>{manager.get(id);return manager.playerHistory.list(id);});
 handle('exportPlayerHistory',async id=>{const p=manager.get(id),r=await dialog.showSaveDialog(win,{defaultPath:p.label+'-players.json'});if(r.canceled)return;await storage.atomic(r.filePath,JSON.stringify(await manager.playerHistory.list(id),null,2));});
+
+handle('minimizeWindow', () => win.minimize());
+handle('toggleMaximizeWindow', () => {
+  if (win.isMaximized()) win.unmaximize();
+  else win.maximize();
+});
+handle('closeWindow', () => { win.close(); });

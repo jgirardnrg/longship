@@ -1,4 +1,7 @@
-# Longship 0.3.0 alpha
+# Longship 0.3.0 alpha.2
+
+- Replaced the native title bar with a draggable Longship header and controls for minimize, maximize, restore, and close.
+- Styled the BepInEx and plugin import confirmation to match Longship and show the selected filename.
 
 - Added automatic SteamCMD download and initialization on Windows x64 and Linux x64.
 - Added automatic public Valheim Dedicated Server installation into a new folder, using anonymous Steam login. Installation leaves the server stopped and preserves existing installations/worlds.
