@@ -43,7 +43,7 @@ async function discoverWorlds(dir, options = {}) {
     const complete = completeGenerations(entries);
     if (complete.length) {
       const chosen = complete[0];
-      found.push({ name: path.basename(canonical), format: 'chunked', folder: canonical, path: canonical, generation: chosen.generation, size: null, ...location(canonical, 'chunked') });
+      found.push({ name: path.basename(canonical), format: 'chunked', folder: canonical, path: canonical, metadataFile: path.join(canonical, chosen.metadataFile), generation: chosen.generation, size: null, ...location(canonical, 'chunked') });
       return; // Chunk data is one world, not additional worlds to recurse into.
     }
     const byName = new Map(entries.filter(e => e.isFile()).map(e => [e.name.toLowerCase(), e.name]));
@@ -69,13 +69,13 @@ async function discoverWorlds(dir, options = {}) {
   return { worlds: found, warnings, truncated, directories };
 }
 async function worlds(dir, options = {}) { return (await discoverWorlds(dir, options)).worlds; }
-async function selectedWorld(p, { optional = false } = {}) {
+async function selectedWorld(p, { optional = false, acceptSeedMetadata } = {}) {
   const result = await discoverWorlds(p.saveDir);
   if (result.truncated || result.warnings.some(w=>/^Cannot (read|inspect)/.test(w))) throw Error('World scan was incomplete; choose a narrower, readable save directory before backup or launch.');
-  let matches = result.worlds.filter(w => w.name === p.world);
+  let matches = result.worlds.filter(w => process.platform === 'win32' ? w.name.toLowerCase() === p.world.toLowerCase() : w.name === p.world);
   if (p.worldPath) {const selected=await fs.realpath(p.worldPath).catch(()=>p.worldPath);matches = matches.filter(w => identity(w.path) === identity(selected));}
   if (matches.length !== 1) {
-    if (optional && matches.length === 0 && !p.worldPath) { if(await worldArtifacts(p))throw Error('World files or a world directory exist, but no complete save generation was found. Refusing to create a replacement world.');return null; }
+    if (optional && matches.length === 0 && !p.worldPath) { const metadata = acceptSeedMetadata ? await acceptSeedMetadata(p) : null; if(await worldArtifacts(p, metadata))throw Error('World files or a world directory exist, but no complete save generation was found. Refusing to create a replacement world.');return null; }
     throw Error(matches.length ? 'Multiple saves share this world name. Select its exact location using Find worlds.' : 'Selected world was not found or has no complete save generation.');
   }
   const world = matches[0];
@@ -84,9 +84,9 @@ async function selectedWorld(p, { optional = false } = {}) {
   if (identity(world.saveDir) !== identity(configuredRoot)) throw Error('The selected world belongs to a different save root. Select it with Find worlds to correct the save directory.');
   return world;
 }
-async function worldArtifacts(p) {
+async function worldArtifacts(p, except) {
   for(const folder of [p.saveDir,path.join(p.saveDir,'worlds_local'),path.join(p.saveDir,'worlds')]) {
-    for(const ext of ['.db','.fwl','.db2','.fwl2'])if(await fs.lstat(path.join(folder,p.world+ext)).catch(()=>null))return true;
+    for(const ext of ['.db','.fwl','.db2','.fwl2'])if(path.join(folder,p.world+ext)!==except&&await fs.lstat(path.join(folder,p.world+ext)).catch(e=>{if(e.code==='ENOENT')return null;throw e;}))return true;
     const directory=path.join(folder,p.world);const st=await fs.lstat(directory).catch(()=>null);
     if(st?.isSymbolicLink())return true;
     if(st?.isDirectory()&&(await fs.readdir(directory)).length)return true;

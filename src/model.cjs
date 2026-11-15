@@ -3,7 +3,7 @@ const crypto = require('node:crypto');
 const MODIFIERS = { combat:['veryeasy','easy','hard','veryhard'], deathpenalty:['casual','veryeasy','easy','hard','hardcore'], resources:['muchless','less','more','muchmore','most'], raids:['none','muchless','less','more','muchmore'], portals:['casual','hard','veryhard'] };
 const PRESETS=['Normal','Casual','Easy','Hard','Hardcore','Immersive','Hammer'];
 const KEYS=['nobuildcost','playerevents','passivemobs','nomap'];
-function profile(index=0) { return {id:crypto.randomUUID(),label:`Server ${index+1}`,name:'My Valheim server',installDir:'',saveDir:'',world:'Dedicated',worldPath:'',worldFormat:'',password:'',port:2456+index*10,public:true,crossplay:false,instanceId:crypto.randomBytes(4).toString('hex'),saveInterval:1800,backups:4,backupShort:7200,backupLong:43200,preset:'',modifiers:{},keys:[],restartEnabled:false,restartTime:'04:00',restartWarningSeconds:60,bridgePort:9800+index,bridgeToken:crypto.randomBytes(24).toString('hex'),extraArgs:[],steamcmdPath:'',updateCheckEnabled:false,updateCheckHours:6,modsEnabled:false,doorstopLibrary:'',playerJoinSound:true}; }
+function profile(index=0) { return {id:crypto.randomUUID(),label:`Server ${index+1}`,name:'My Valheim server',installDir:'',saveDir:'',world:'Dedicated',worldSeed:'',worldPath:'',worldFormat:'',password:'',port:2456+index*10,public:true,crossplay:false,instanceId:crypto.randomBytes(4).toString('hex'),saveInterval:1800,backups:4,backupShort:7200,backupLong:43200,preset:'',modifiers:{},keys:[],restartEnabled:false,restartTime:'04:00',restartWarningSeconds:60,bridgePort:9800+index,bridgeToken:crypto.randomBytes(24).toString('hex'),extraArgs:[],steamcmdPath:'',updateCheckEnabled:false,updateCheckHours:6,modsEnabled:false,doorstopLibrary:'',playerJoinSound:true}; }
 function normalizeInstanceId(value){return /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value||'')?crypto.createHash('sha256').update(value).digest('hex').slice(0,8):value;}
 function integer(v,min,max,label){if(!Number.isInteger(Number(v))||Number(v)<min||Number(v)>max)throw Error(`${label} must be ${min}–${max}.`);}
 function validate(p) {
@@ -13,6 +13,8 @@ function validate(p) {
  if(/[\\/\x00-\x1f]/.test(p.world)||p.world==='.'||p.world==='..')throw Error('World must be a filename, not a path.');
  if((p.password.length>0&&p.password.length<5)||(p.public&&p.password.length<5))throw Error('Server password needs at least 5 characters.');
  if(p.crossplay&&!/^[A-Za-z0-9_-]{1,8}$/.test(p.instanceId||''))throw Error('PlayFab instance ID must be 1–8 letters, digits, underscores or hyphens. Use a short unique ID such as 1.');
+ if(p.worldSeed!==undefined&&(typeof p.worldSeed!=='string'||p.worldSeed.length>256||/[\x00-\x1f\x7f]/.test(p.worldSeed)||p.worldSeed!==Buffer.from(p.worldSeed,'utf8').toString('utf8')||(p.worldSeed&&!p.worldSeed.trim())))throw Error('Enter a seed of up to 256 printable characters, or leave it blank.');
+ if(p.worldSeed&&(/[<>:"|?*]|[. ]$/.test(p.world)||/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(p.world)||Buffer.byteLength(p.world,'utf8')>160))throw Error('Choose a valid world filename before setting a seed.');
  if(p.worldPath&&!path.isAbsolute(p.worldPath))throw Error('Selected world path must be absolute.');
  if(p.worldFormat&&!['legacy','chunked'].includes(p.worldFormat))throw Error('Unsupported world format.');
  if(!path.isAbsolute(p.installDir)||!path.isAbsolute(p.saveDir))throw Error('Choose absolute installation and save directories.');

@@ -1,5 +1,6 @@
-# Longship 0.3.0 alpha.2
+# Longship 0.3.0 alpha.3
 
+- Added an optional **New world seed** field in Server settings. Paste the exact seed from Atlas to create a new Valheim world. Longship checks the seed before launching an existing save.
 - Replaced the native title bar with a draggable Longship header and controls for minimize, maximize, restore, and close.
 - Styled the BepInEx and plugin import confirmation to match Longship and show the selected filename.
 
