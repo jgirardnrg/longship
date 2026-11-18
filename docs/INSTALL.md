@@ -14,6 +14,10 @@ The bridge runs on the server. Players do not install it. Other mods may have cl
 
 The speaker button beside **Connected players** enables or mutes the chime for this server. The preference is saved immediately. Sounds require Longship to stay open and a working bridge. Checks occur about every 2 seconds. Players already online at the first successful check are a silent baseline; later arrivals and departures trigger distinct chimes. After a temporary bridge interruption, changes are compared with the last successful snapshot. Alerts are queued and continue when the window is hidden in the tray.
 
+Expand **Sound settings** in Overview to choose separate join and departure files and adjust each volume from 0–100%. **Preview** tests that sound at its selected volume, including while notifications are muted. **Default** restores the bundled sound while retaining your volume. Changes save immediately, including while the server is running.
+
+Supported file types are WAV, MP3, OGG, FLAC and M4A, up to 32 MB. Longship checks that the file can be decoded and copies it into its data folder. Moving the original file afterward does not break alerts.
+
 ## Other plugins
 
 Use **Import plugin ZIP / DLL…**, then **Enable** after checking its requirements. Imports start disabled. Enabling a plugin also enables BepInEx. Install, enable, disable and launch-toggle changes save automatically. Configuration-file edits still have an explicit Save button.

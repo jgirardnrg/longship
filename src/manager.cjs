@@ -28,7 +28,35 @@ class Manager extends EventEmitter {
  if(p.modsEnabled)delete env.DOORSTOP_DISABLE;Object.assign(env,modEnv);const child=spawn(host||exe,host?[exe,...args(p,logfile)]:args(p,logfile),{cwd:p.installDir,env,shell:false,windowsHide:true,stdio:['pipe','pipe','pipe']});r.child=child;
  let control='';child.stdout.on('data',b=>{control+=b.toString();let at;while((at=control.indexOf('\n'))>=0){const line=control.slice(0,at).trim();control=control.slice(at+1);if(line.startsWith('HARBOR_CHILD:')){r.serverPid=Number(line.slice(13));this.emit('changed');}else if(line==='HARBOR_STOP_SENT'){if(r.stopAck)r.stopAck.resolve();}else if(line.startsWith('HARBOR_ERROR:')){this.log(id,line);if(r.stopAck)r.stopAck.reject(Error(line));}}});child.stderr.on('data',()=>{});
  child.once('error',e=>{r.status='failed';this.log(id,'Launch failed: '+e.message);});child.once('exit',(code,signal)=>{r.status=r.startupError?'failed':code===0||r.stopRequested?'stopped':'failed';r.exitCode=code;this.log(id,`Process exited (${signal||code}).`);this.playerHistory.end(id,r).catch(e=>this.emit('warning','Player history: '+e.message));if(r.restartAfterExit){r.restartAfterExit=false;this.start(id).catch(e=>this.log(id,'Restart failed: '+e.message));}});return this.snapshot();}
- async setJoinSound(id,enabled){if(typeof enabled!=='boolean')throw Error('Sound must be a toggle.');const p=this.get(id),previous=p.playerJoinSound;p.playerJoinSound=enabled;try{await this.persist();}catch(e){p.playerJoinSound=previous;throw e;}this.emit('changed');return this.snapshot();}
+ async setJoinSound(id, enabled) {
+  if (typeof enabled !== 'boolean') throw Error('Sound must be a toggle.');
+  const update = (this.soundPreferences || Promise.resolve()).then(async () => {
+   const p = this.get(id), previous = p.playerJoinSound;
+   p.playerJoinSound = enabled;
+   try { await this.persist(); }
+   catch (error) { p.playerJoinSound = previous; throw error; }
+   this.emit('changed');
+   return this.snapshot();
+  });
+  this.soundPreferences = update.catch(() => {});
+  return update;
+ }
+ async setPlayerSound(id, kind, patch) {
+  const {soundSettings, validateSounds} = require('./player-sounds.cjs');
+  const update = (this.soundPreferences || Promise.resolve()).then(async () => {
+   const p = this.get(id);
+   const previous = p.playerSounds;
+   const value = {...soundSettings(p, kind), ...patch};
+   validateSounds({[kind]: value});
+   p.playerSounds = {...previous, [kind]: value};
+   try { await this.persist(); }
+   catch (error) { p.playerSounds = previous; throw error; }
+   this.emit('changed');
+   return this.snapshot();
+  });
+  this.soundPreferences = update.catch(() => {});
+  return update;
+ }
  async pollPlayerJoins(id, run, now = Date.now()) {
   if (run.status !== 'running' || !run.profile?.modsEnabled) return;
   if (run.playerReadPending || now < (run.nextPlayerCheck || 0)) return;

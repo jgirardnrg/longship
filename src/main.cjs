@@ -1,11 +1,11 @@
-const {app,BrowserWindow,ipcMain,dialog,shell,Tray,Menu,nativeImage}=require('electron');const path=require('node:path');const {Manager}=require('./manager.cjs');const {profile,MODIFIERS,PRESETS,KEYS}=require('./model.cjs');const storage=require('./storage.cjs');let manager,win,trayControls,setup;
+const {app,BrowserWindow,ipcMain,dialog,shell,Tray,Menu,nativeImage}=require('electron');const path=require('node:path');const {Manager}=require('./manager.cjs');const {profile,MODIFIERS,PRESETS,KEYS}=require('./model.cjs');const storage=require('./storage.cjs');let manager,win,trayControls,setup,soundLibrary,pendingSound;
 const {userDataRoot,migrateLegacyData}=require('./user-data.cjs');
 const customUserData=!!app.commandLine.getSwitchValue('user-data-dir');
 if(!customUserData)app.setPath('userData',userDataRoot(app.getPath('appData')));
 app.setName('Longship');
 if(process.platform==='win32')app.setAppUserModelId('games.valheimharbor.launcher');
 const primaryInstance=app.requestSingleInstanceLock();if(!primaryInstance)app.quit();else app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.show();win.focus();}});
-app.whenReady().then(async()=>{if(!primaryInstance)return;if(process.platform==='darwin')app.dock?.setIcon(path.join(__dirname,'../resources/icons/longship.png'));if(!customUserData)await migrateLegacyData(app.getPath('appData'),app.getPath('userData'));manager=new Manager(path.join(app.getPath('userData'),'data'));await manager.load();setup=new (require('./setup.cjs').Setup)(manager.root,{steam:manager.updates.steam});setup.changed=()=>{if(win&&!win.isDestroyed())win.webContents.send('setupChanged',setup.job);};win=new BrowserWindow({frame:false,width:1180,height:780,minWidth:900,minHeight:600,backgroundColor:'#111b25',icon:path.join(__dirname,'../resources/icons/longship.png'),webPreferences:{backgroundThrottling:false,autoplayPolicy:'no-user-gesture-required',preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.setMenuBarVisibility(false);
+app.whenReady().then(async()=>{if(!primaryInstance)return;if(process.platform==='darwin')app.dock?.setIcon(path.join(__dirname,'../resources/icons/longship.png'));if(!customUserData)await migrateLegacyData(app.getPath('appData'),app.getPath('userData'));manager=new Manager(path.join(app.getPath('userData'),'data'));await manager.load();soundLibrary=new (require('./player-sounds.cjs').SoundLibrary)(path.join(manager.root,'sounds'));setup=new (require('./setup.cjs').Setup)(manager.root,{steam:manager.updates.steam});setup.changed=()=>{if(win&&!win.isDestroyed())win.webContents.send('setupChanged',setup.job);};win=new BrowserWindow({frame:false,width:1180,height:780,minWidth:900,minHeight:600,backgroundColor:'#111b25',icon:path.join(__dirname,'../resources/icons/longship.png'),webPreferences:{backgroundThrottling:false,autoplayPolicy:'no-user-gesture-required',preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.setMenuBarVisibility(false);
   const sendWindowState = () => win.webContents.send('windowMaximized', win.isMaximized());
   win.on('maximize', sendWindowState);
   win.on('unmaximize', sendWindowState);
@@ -73,3 +73,24 @@ handle('toggleMaximizeWindow', () => {
   else win.maximize();
 });
 handle('closeWindow', () => { win.close(); });
+
+handle('choosePlayerSound', async (id, kind) => {
+  require('./player-sounds.cjs').soundSettings(manager.get(id), kind);
+  pendingSound = null;
+  const choice = await dialog.showOpenDialog(win, {title: kind === 'join' ? 'Choose join sound' : 'Choose departure sound', properties: ['openFile'], filters: [{name: 'Audio files', extensions: ['wav', 'mp3', 'ogg', 'flac', 'm4a']}]});
+  if (choice.canceled) return null;
+  const candidate = await soundLibrary.prepare(choice.filePaths[0]);
+  const token = require('node:crypto').randomUUID();
+  pendingSound = {token, id, kind, candidate};
+  return {token, name: candidate.name, source: candidate.source};
+});
+handle('confirmPlayerSound', async token => {
+  if (!pendingSound || pendingSound.token !== token) throw Error('Choose the sound file again.');
+  const selection = pendingSound;
+  pendingSound = null;
+  const stored = await soundLibrary.store(selection.candidate);
+  return manager.setPlayerSound(selection.id, selection.kind, stored);
+});
+handle('setPlayerSoundVolume', (id, kind, volume) => manager.setPlayerSound(id, kind, {volume}));
+handle('resetPlayerSound', (id, kind) => manager.setPlayerSound(id, kind, {file: null, name: ''}));
+handle('playerSoundSource', (id, kind) => soundLibrary.source(manager.get(id), kind));

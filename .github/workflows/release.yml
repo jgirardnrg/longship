@@ -40,6 +40,14 @@ jobs:
         run: node test/packaged-smoke.cjs
         env:
           LONGSHIP_APP: ${{ matrix.executable }}
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a node test/custom-sounds-gui.cjs
+        env:
+          LONGSHIP_APP: ${{ matrix.executable }}
+      - if: runner.os == 'Windows'
+        run: node test/custom-sounds-gui.cjs
+        env:
+          LONGSHIP_APP: ${{ matrix.executable }}
       - uses: actions/upload-artifact@v4
         with:
           name: longship-${{ matrix.platform }}-x64
@@ -72,4 +80,4 @@ jobs:
           rm -f packaged-smoke.png
           for file in *; do if [[ "$file" == *" "* ]]; then mv -- "$file" "${file// /.}"; fi; done
           sha256sum * > SHA256SUMS.txt
-          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --prerelease --title "Longship $GITHUB_REF_NAME alpha" --notes-file ../docs/RELEASE-NOTES-0.3.1.md ./*
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --prerelease --title "Longship $GITHUB_REF_NAME alpha" --notes-file ../docs/RELEASE-NOTES-0.3.2.md ./*

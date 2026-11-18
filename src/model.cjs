@@ -7,6 +7,7 @@ function profile(index=0) { return {id:crypto.randomUUID(),label:`Server ${index
 function normalizeInstanceId(value){return /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value||'')?crypto.createHash('sha256').update(value).digest('hex').slice(0,8):value;}
 function integer(v,min,max,label){if(!Number.isInteger(Number(v))||Number(v)<min||Number(v)>max)throw Error(`${label} must be ${min}–${max}.`);}
 function validate(p) {
+ require('./player-sounds.cjs').validateSounds(p.playerSounds);
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.id||''))throw Error('Invalid server profile ID.');
  if(typeof p.password!=='string'||typeof p.bridgeToken!=='string'||p.bridgeToken.length<32||p.bridgeToken.length>256||/[\x00-\x1f]/.test(p.bridgeToken))throw Error('A bridge token of 32–256 printable characters is required.');
  if(!p.id||!p.name?.trim()||!p.world?.trim())throw Error('Server name and world are required.');

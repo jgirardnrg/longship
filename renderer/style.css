@@ -40,3 +40,12 @@ header button { -webkit-app-region: no-drag; }
 }
 .window-controls button:hover { background: #2a3c49; }
 .window-controls button:last-child:hover { background: #943b44; }
+
+.sound-settings { margin-top: 14px; border-top: 1px solid #2e4350; padding-top: 10px; }
+.sound-settings summary { cursor: pointer; font-weight: 600; }
+.sound-row { display: grid; gap: 8px; margin-top: 14px; }
+.sound-row > label { font-weight: 600; }
+.sound-name { color: #a6bbc8; overflow-wrap: anywhere; }
+.sound-volume { display: flex; align-items: center; gap: 10px; }
+.sound-volume input { flex: 1; min-width: 70px; accent-color: #edbd6e; padding: 0; }
+.sound-volume output { min-width: 40px; text-align: right; }
