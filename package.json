@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "test": "node --test test/*.test.cjs",
+    "test": "node --test --test-concurrency=2 test/*.test.cjs",
     "dist:win": "electron-builder --win nsis portable",
     "dist:linux": "electron-builder --linux tar.gz"
   },
