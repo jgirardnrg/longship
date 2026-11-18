@@ -3,3 +3,26 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),{PlayerPr
 test('join detection ignores baseline, departures, renames and new sessions',()=>{const p=new PlayerPresence(),a={name:'A',platformId:'1'},b={name:'B',platformId:'2'};assert.equal(p.observe('s',1,[a]),0);assert.equal(p.observe('s',1,[a,b]),1);assert.equal(p.observe('s',1,[a,b]),0);assert.equal(p.observe('s',1,[{...a,name:'New'}]),0);assert.equal(p.observe('s',1,[a,b]),1);assert.equal(p.observe('s',2,[a,b]),0);p.reset('s');assert.equal(p.observe('s',2,[a,b]),0);});
 const {Manager}=require('../src/manager.cjs'),{profile}=require('../src/model.cjs');
 test('background polling emits new arrivals, respects mute and ignores stale runs',async(t)=>{const root=await fs.mkdtemp(path.join(os.tmpdir(),'longship-sound-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));const m=new Manager(root);clearInterval(m.poll);const p=profile();p.modsEnabled=true;m.profiles=[p];const r={status:'running',profile:p};m.runs.set(p.id,r);let players=[],events=[];m.bridge=async()=>({players});m.on('playerJoined',e=>events.push(e));await m.pollPlayerJoins(p.id,r,10000);players=[{name:'A'}];await m.pollPlayerJoins(p.id,r,20000);assert.equal(events.length,1);p.playerJoinSound=false;players.push({name:'B'});await m.pollPlayerJoins(p.id,r,30000);assert.equal(events.length,1);p.playerJoinSound=true;await m.pollPlayerJoins(p.id,r,40000);assert.equal(events.length,1);m.runs.delete(p.id);players.push({name:'C'});await m.pollPlayerJoins(p.id,r,50000);assert.equal(events.length,1);});
+
+test('alerts survive bridge outages and report departures without replaying muted changes',async(t)=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'longship-presence-gap-'));
+ t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ const manager=new Manager(root);clearInterval(manager.poll);
+ const p=profile();p.modsEnabled=true;manager.profiles=[p];
+ const run={status:'running',profile:p};manager.runs.set(p.id,run);
+ let players=[],outage=false;const events=[];
+ manager.bridge=async()=>{if(outage)throw Error('Temporary bridge timeout');return {players};};
+ manager.on('playerJoined',e=>events.push(['join',e.count]));
+ manager.on('playerDeparted',e=>events.push(['depart',e.count]));
+ await manager.pollPlayerJoins(p.id,run,10000);
+ players=[{name:'A',platformId:'Steam_1'}];await manager.pollPlayerJoins(p.id,run,20000);
+ outage=true;await manager.pollPlayerJoins(p.id,run,30000);
+ assert.deepEqual(events,[['join',1]]);
+ outage=false;players=[{name:'B',platformId:'Steam_2'}];await manager.pollPlayerJoins(p.id,run,50000);
+ assert.deepEqual(events,[['join',1],['join',1],['depart',1]]);
+ await manager.pollPlayerJoins(p.id,run,60000);
+ assert.equal(events.length,3);
+ p.playerJoinSound=false;players=[];await manager.pollPlayerJoins(p.id,run,70000);
+ p.playerJoinSound=true;await manager.pollPlayerJoins(p.id,run,80000);
+ assert.equal(events.length,3);
+});

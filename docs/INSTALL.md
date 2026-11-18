@@ -1,4 +1,4 @@
-# Player lists and join sounds
+# Player lists and sounds
 
 1. Select your server in Longship and open **Mods**.
 2. Click **Download BepInEx ↗**, or visit the [Valheim BepInEx pack](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/). Download the ZIP from that page.
@@ -10,9 +10,9 @@ Do not copy framework DLLs beside the server executable by hand. Longship handle
 
 The bridge runs on the server. Players do not install it. Other mods may have client requirements or affect crossplay; check each mod author’s instructions before enabling them.
 
-## Join sound
+## Join and departure sounds
 
-The speaker button beside **Connected players** enables or mutes the chime for this server. The preference is saved immediately. Sounds require Longship to stay open and a working bridge. Checks occur about every 2 seconds. Players already online at the first successful check are a silent baseline; later arrivals trigger the chime. Recovery from a bridge outage also starts a silent baseline.
+The speaker button beside **Connected players** enables or mutes the chime for this server. The preference is saved immediately. Sounds require Longship to stay open and a working bridge. Checks occur about every 2 seconds. Players already online at the first successful check are a silent baseline; later arrivals and departures trigger distinct chimes. After a temporary bridge interruption, changes are compared with the last successful snapshot. Alerts are queued and continue when the window is hidden in the tray.
 
 ## Other plugins
 

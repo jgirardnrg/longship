@@ -1,12 +1,11 @@
 const {verifyWorldSeed,matchingSeedMetadata,prepareSeededWorld}=require('./world-seed.cjs');
 const {PlayerHistory}=require('./player-history.cjs');
-const {PlayerPresence}=require('./player-presence.cjs');
 const backupTools=require('./backups.cjs');
 const {identity:backupToolsIdentity}=require('./worlds.cjs');
 const {joinCodeFromLine}=require('./session-info.cjs');
 const {EventEmitter}=require('node:events');const fs=require('node:fs/promises');const path=require('node:path');const {spawn}=require('node:child_process');const {args,validate,conflict,nextRestart,normalizeInstanceId}=require('./model.cjs');const {ensureWindowsHost}=require('./windows-host.cjs');const store=require('./storage.cjs');const {checkPorts}=require('./ports.cjs');const {Maintenance}=require('./maintenance.cjs');const {SteamClient}=require('./steam.cjs');const {Mods,modEnvironment}=require('./mods.cjs');const {Updates}=require('./updates.cjs');
 class Manager extends EventEmitter {
- constructor(root,{platform=process.platform,inspect,steam}={}){super();this.root=root;this.platform=platform;this.profiles=[];this.runs=new Map();this.pendingStarts=new Set();this.presence=new PlayerPresence();this.playerHistory=new PlayerHistory(root);this.maintenance=new Maintenance(this,inspect?{inspect}:{});this.mods=new Mods(this,this.maintenance);this.updates=new Updates(this,this.maintenance,steam||new SteamClient(),this.mods);this.poll=setInterval(()=>this.tick().catch(e=>this.emit('warning',e.message)),1000);this.poll.unref();}
+ constructor(root,{platform=process.platform,inspect,steam}={}){super();this.root=root;this.platform=platform;this.profiles=[];this.runs=new Map();this.pendingStarts=new Set();this.playerHistory=new PlayerHistory(root);this.maintenance=new Maintenance(this,inspect?{inspect}:{});this.mods=new Mods(this,this.maintenance);this.updates=new Updates(this,this.maintenance,steam||new SteamClient(),this.mods);this.poll=setInterval(()=>this.tick().catch(e=>this.emit('warning',e.message)),1000);this.poll.unref();}
  async load(){try{const data=JSON.parse(await fs.readFile(path.join(this.root,'profiles.json'),'utf8'));if(data.version!==1||!Array.isArray(data.profiles))throw Error('Unsupported profile file.');this.profiles=data.profiles;for(const p of this.profiles){p.playerJoinSound??=true;p.worldSeed??='';p.instanceId=normalizeInstanceId(p.instanceId);if(p.modsEnabled===undefined)p.modsEnabled=!!(await fs.stat(path.join(p.installDir,'BepInEx/core/BepInEx.dll')).catch(()=>null));p.steamcmdPath??='';p.updateCheckEnabled??=false;p.updateCheckHours??=6;p.doorstopLibrary??='';}}catch(e){if(e.code!=='ENOENT')throw e;}return this.snapshot();}
  snapshot(){return this.profiles.map(p=>({...p,runtime:this.state(p.id),maintenance:this.maintenance.state(p.id),update:this.updates.state(p.id)}));}
  get(id){const p=this.profiles.find(p=>p.id===id);if(!p)throw Error('Unknown server.');return p;}
@@ -30,12 +29,33 @@ class Manager extends EventEmitter {
  let control='';child.stdout.on('data',b=>{control+=b.toString();let at;while((at=control.indexOf('\n'))>=0){const line=control.slice(0,at).trim();control=control.slice(at+1);if(line.startsWith('HARBOR_CHILD:')){r.serverPid=Number(line.slice(13));this.emit('changed');}else if(line==='HARBOR_STOP_SENT'){if(r.stopAck)r.stopAck.resolve();}else if(line.startsWith('HARBOR_ERROR:')){this.log(id,line);if(r.stopAck)r.stopAck.reject(Error(line));}}});child.stderr.on('data',()=>{});
  child.once('error',e=>{r.status='failed';this.log(id,'Launch failed: '+e.message);});child.once('exit',(code,signal)=>{r.status=r.startupError?'failed':code===0||r.stopRequested?'stopped':'failed';r.exitCode=code;this.log(id,`Process exited (${signal||code}).`);this.playerHistory.end(id,r).catch(e=>this.emit('warning','Player history: '+e.message));if(r.restartAfterExit){r.restartAfterExit=false;this.start(id).catch(e=>this.log(id,'Restart failed: '+e.message));}});return this.snapshot();}
  async setJoinSound(id,enabled){if(typeof enabled!=='boolean')throw Error('Sound must be a toggle.');const p=this.get(id),previous=p.playerJoinSound;p.playerJoinSound=enabled;try{await this.persist();}catch(e){p.playerJoinSound=previous;throw e;}this.emit('changed');return this.snapshot();}
- async pollPlayerJoins(id,r,now=Date.now()){
-  if(r.status!=='running'||!r.profile?.modsEnabled){this.presence.reset(id);return;}
-  if(r.playerReadPending||now<(r.nextPlayerCheck||0))return;r.playerReadPending=true;r.nextPlayerCheck=now+2000;
-  try{const data=await this.bridge(id,'players');if(this.runs.get(id)!==r||r.status!=='running')return;await this.playerHistory.observe(id,r,data.players);if(this.runs.get(id)!==r||r.status!=='running'){await this.playerHistory.end(id,r);return;}const joined=this.presence.observe(id,r,data.players);if(joined&&this.get(id).playerJoinSound!==false)this.emit('playerJoined',{id,count:joined});}
-  catch(e){if(e.code)this.emit('warning','Player history: '+e.message);if(this.runs.get(id)===r){await this.playerHistory.gap(id,r).catch(error=>this.emit('warning','Player history: '+error.message));this.presence.reset(id);r.nextPlayerCheck=now+10000;}}
-  finally{r.playerReadPending=false;}
+ async pollPlayerJoins(id, run, now = Date.now()) {
+  if (run.status !== 'running' || !run.profile?.modsEnabled) return;
+  if (run.playerReadPending || now < (run.nextPlayerCheck || 0)) return;
+  run.playerReadPending = true;
+  run.nextPlayerCheck = now + 2000;
+  try {
+   const data = await this.bridge(id, 'players');
+   if (this.runs.get(id) !== run || run.status !== 'running') return;
+   const records = await this.playerHistory.observe(id, run, data.players);
+   if (this.runs.get(id) !== run || run.status !== 'running') {
+    await this.playerHistory.end(id, run);
+    return;
+   }
+   if (this.get(id).playerJoinSound === false) return;
+   const joined = records.filter(record => record.event === 'connected').length;
+   const departed = records.filter(record => record.event === 'disconnected').length;
+   if (joined) this.emit('playerJoined', {id, count: joined});
+   if (departed) this.emit('playerDeparted', {id, count: departed});
+  } catch (error) {
+   if (error.code) this.emit('warning', 'Player history: ' + error.message);
+   if (this.runs.get(id) === run) {
+    await this.playerHistory.gap(id, run).catch(error => this.emit('warning', error.message));
+    run.nextPlayerCheck = now + 10000;
+   }
+  } finally {
+   run.playerReadPending = false;
+  }
  }
  async bridge(id,action,payload={}){const p=this.get(id);if(!this.active(id))throw Error('Start the server first.');const res=await fetch(`http://127.0.0.1:${p.bridgePort}/${action}`,{method:action==='players'?'GET':'POST',headers:{Authorization:'Bearer '+p.bridgeToken,'Content-Type':'application/json'},body:action==='players'?undefined:JSON.stringify(payload),signal:AbortSignal.timeout(7000)}).catch(()=>{throw Error('Companion bridge unavailable. Install/enable the included BepInEx plugin for live administration.');});const data=await res.json();if(!res.ok||data.error||data.ok===false)throw Error(data.error||'Bridge rejected the request.');if(action==='players'&&!Array.isArray(data.players))throw Error('Longship Bridge needs an update: player data is missing. Open Mods and choose Update Longship Bridge.');return data;}
  async stop(id,restart=false){if(!this.active(id))throw Error('Server is not running.');const r=this.runs.get(id);if(r.status==='stopping')throw Error('Shutdown already in progress.');

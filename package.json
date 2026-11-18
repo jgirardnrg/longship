@@ -1,6 +1,6 @@
 {
   "name": "longship",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Valheim dedicated server command center",
   "main": "src/main.cjs",
   "private": true,
@@ -29,7 +29,7 @@
       "docs/VALIDATION-0.2.8.md",
       "resources/audio/**",
       "docs/INSTALL.md",
-      "docs/RELEASE-NOTES-0.3.0.md",
+      "docs/RELEASE-NOTES-0.3.1.md",
       "docs/VALIDATION-0.3.0.md"
     ],
     "directories": {
